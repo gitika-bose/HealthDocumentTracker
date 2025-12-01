@@ -1,0 +1,28 @@
+"""
+Main Flask application file
+Imports and registers blueprints for different API endpoints
+"""
+from flask import Flask, jsonify
+import os
+
+# Import blueprints
+from upload import upload_bp
+from search import search_bp
+
+# Initialize Flask application
+app = Flask(__name__)
+
+# Register blueprints
+app.register_blueprint(upload_bp)
+app.register_blueprint(search_bp)
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({'status': 'healthy', 'service': 'HealthDocumentTracker'}), 200
+
+if __name__ == '__main__':
+    # Run the Flask application
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)
