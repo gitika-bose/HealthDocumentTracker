@@ -2,6 +2,9 @@
 Search API endpoint for document search functionality
 """
 from flask import Blueprint, request, jsonify
+from azure.identity import DefaultAzureCredential
+from azure.ai.projects import AIProjectClient
+import os
 
 # Create Blueprint
 search_bp = Blueprint('search', __name__)
@@ -12,7 +15,7 @@ def search_documents():
     Search for documents based on text input
     
     Expected: JSON body with 'query' field
-    Returns: JSON response (implementation to be added by user)
+    Returns: JSON response using Azure AI Projects agent
     """
     try:
         # Get JSON data from request
@@ -26,13 +29,29 @@ def search_documents():
         if not query:
             return jsonify({'error': 'Query cannot be empty'}), 400
         
-        # TODO: Add your search implementation here
-        # The query parameter is available for your search logic
+        myEndpoint = "https://health-tracker-resource.services.ai.azure.com/api/projects/health-tracker"
+
+        project_client = AIProjectClient(
+            endpoint=myEndpoint,
+            credential=DefaultAzureCredential(),
+        )
+
+        myAgent = "health-tracker-agent"
+        # Get an existing agent
+        agent = project_client.agents.get(agent_name=myAgent)
+        print(f"Retrieved agent: {agent.name}")
+
+        openai_client = project_client.get_openai_client()
+        response = openai_client.responses.create(
+            input=[{"role": "user", "content": query}],
+            extra_body={"agent": {"name": agent.name, "type": "agent_reference"}},
+        )
+
+        print(f"Response output: {response.output_text}")
         
         return jsonify({
-            'message': 'Search endpoint ready',
+            'message': response.output_text,
             'query': query,
-            'note': 'Add your search implementation here'
         }), 200
         
     except Exception as e:
